@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- QR Scanner Library -->
+    <script type="module">
+      import QrScanner from "https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.min.js";
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const scanBtn = document.getElementById("scanBtn");
+        const videoElem = document.getElementById("qr-video");
+
+        let qrScanner;
+
+        scanBtn.addEventListener("click", async () => {
+          scanBtn.querySelector("span").textContent = "SCANNING...";
+          scanBtn.disabled = true;
+
+          qrScanner = new QrScanner(
+            videoElem,
+            async (result) => {
+              console.log("QR result:", result.data);
+
+              qrScanner.stop();
+              videoElem.style.display = "none";
+
+              try {
+                // 🔗 API CALL للباك اند
+                const response = await fetch("http://localhost:5000/verify", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  // لو QR مكتوب فيه "your id : 22" → نقطعها
+                  body: JSON.stringify({
+                    id: result.data.trim().replace("your id : ", ""),
+                  }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                  window.location.href = "verified.html";
+                } else {
+                  window.location.href = "notfound.html";
+                }
+              } catch (error) {
+                console.error("API error:", error);
+                alert("⚠️ Server not reachable!");
+              }
+            },
+            {
+              highlightScanRegion: true,
+              highlightCodeOutline: true,
+            }
+          );
+
+          videoElem.style.display = "block";
+          await qrScanner.start();
+        });
+      });
+    </script>
+
+    <!-- Custom Font -->
+    <style>
+      @font-face {
+        font-family: "PixelFont";
+        src: url("./fonts/pixel.ttf") format("truetype");
+      }
+      .font-pixel {
+        font-family: "PixelFont", monospace;
+      }
+    </style>
+  </head>
+  <body class="flex flex-col justify-start items-center w-full min-h-screen">
+    <!-- Background Wrapper -->
+    <div
+      class="relative w-full min-h-screen bg-[#0b021c] flex justify-center items-start"
+      style="background-image: url('./images/img_group_46.png');
+             background-size: cover;
+             background-position: center;"
+    >
+      <!-- ✅ New image (top-right dots) -->
+      <img src="./images/img_group_16.png" alt="dots right top"
+           class="absolute top-0 right-0 w-[373px] h-[109px] sm:w-[559px] sm:h-[164px] md:w-[746px] md:h-[218px] z-0" />
+
+      <!-- Overlay Grid -->
+      <div
+        class="absolute inset-0 pointer-events-none"
+        style="background-image: url('./images/img_grid.png');
+               background-size: cover;
+               background-position: center;"
+      ></div>
+
+      <!-- Main Content -->
+      <div class="relative w-full flex flex-col items-center z-10">
+        <!-- Logo -->
+        <div
+          class="w-full flex justify-start items-start pt-[25px] sm:pt-[38px] md:pt-[51px] pl-[24px] sm:pl-[36px] md:pl-[48px]"
+        >
+          <img
+            src="./images/img_logofull_1_5.png"
+            alt="Hackwave Logo"
+            class="w-[72px] h-[62px] sm:w-[108px] sm:h-[93px] md:w-[144px] md:h-[124px]"
+          />
+        </div>
+
+        <!-- Character -->
+        <div class="relative flex justify-center items-center mt-8 mb-6">
+          <img
+            src="./images/img_image_3.png"
+            alt="Player character"
+            class="relative z-10 w-[265px] h-[375px] sm:w-[397px] sm:h-[562px] md:w-[530px] md:h-[750px]"
+          />
+        </div>
+
+        <!-- Game Text -->
+        <div class="mt-2 px-4 text-center">
+          <p
+            class="font-pixel text-[42px] sm:text-[33px] md:text-[45px] text-[#eaf4fc]"
+            style="text-shadow: 0px 31px 19px rgba(234, 244, 252, 0.12);"
+          >
+            PLAYER ONE READY! <br />
+            SCAN THE QR CODE TO START.
+          </p>
+        </div>
+
+        <!-- Scan Button -->
+        <div class="mt-10">
+          <button
+            id="scanBtn"
+            class="flex flex-row gap-6 mt-32 justify-center items-center px-8 py-4 bg-[#ec53b0b2] rounded-xl hover:bg-[#ec53b0] transition-colors duration-300 z-50"
+          >
+            <img
+              src="./images/img_vector.svg"
+              alt="QR Code icon"
+              class="w-[27px] h-[22px] sm:w-[40px] sm:h-[33px] md:w-[54px] md:h-[44px]"
+            />
+            <span
+              class="font-pixel text-[44px] sm:text-[36px] md:text-[48px] text-[#eaf4fc]"
+            >
+              SCAN
+            </span>
+          </button>
+        </div>
+
+        <!-- Video preview -->
+        <video
+          id="qr-video"
+          style="display: none; width: 300px; margin-top: 20px; border: 2px solid #ec53b0; border-radius: 8px;"
+        ></video>
+
+        <!-- Extra Overlay Decoration -->
+        <div class="relative w-full flex flex-col justify-start items-center -mt-[200px] sm:-mt-[300px] md:-mt-[562px] pointer-events-none">
+          <div class="relative w-full flex justify-center items-center">
+            <img src="./images/img_dots_3.png" alt="glow effect"
+                 class="w-full max-w-[976px] h-auto px-[52px]" />
+          </div>
+          <div class="relative w-full flex flex-col justify-center items-end pt-[64px] pb-[64px] px-[56px] -mt-[146px]"
+               style="background-image: url('./images/img_blending_1687300048313.png');">
+            <div class="w-full flex justify-center items-end mt-[474px]">
+              <img src="./images/img_itc.png" alt="Information Technology Community"
+                   class="w-[200px] sm:w-[250px] md:w-[300px] h-auto" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
